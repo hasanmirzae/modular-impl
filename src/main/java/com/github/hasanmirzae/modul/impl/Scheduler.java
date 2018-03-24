@@ -5,14 +5,14 @@ import com.github.hasanmirzae.modul.AbstractModule;
 
 import java.util.concurrent.TimeUnit;
 
-public class SchedulerModule extends AbstractModule<SchedulerStatus,Void> {
+public class Scheduler extends AbstractModule<SchedulerStatus,Void> {
 
     private final SchedulerConfig config;
     private final Runnable task;
     private final Thread taskRunner;
     private SchedulerStatus status = SchedulerStatus.INACTIVE;
 
-    public SchedulerModule(SchedulerConfig config, Runnable task){
+    public Scheduler(SchedulerConfig config, Runnable task){
         this.config = config;
         this.task = task;
         this.taskRunner = createRunner();

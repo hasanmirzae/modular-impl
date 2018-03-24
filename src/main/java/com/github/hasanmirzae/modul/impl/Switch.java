@@ -5,11 +5,11 @@ import com.github.hasanmirzae.modul.AbstractModule;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
-public class SwitchModule<I,O> extends AbstractModule<I,O> {
+public class Switch<I,O> extends AbstractModule<I,O> {
 
     private Map<I,Callable<O>> conditions;
 
-    public SwitchModule(Map<I,Callable<O>> conditions){
+    public Switch(Map<I,Callable<O>> conditions){
         this.conditions = conditions;
     }
 
