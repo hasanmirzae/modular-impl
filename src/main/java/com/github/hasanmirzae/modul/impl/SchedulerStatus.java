@@ -1,5 +1,5 @@
 package com.github.hasanmirzae.modul.impl;
 
-enum SchedulerStatus{
+public enum SchedulerStatus{
     ACTIVE,INACTIVE;
 }

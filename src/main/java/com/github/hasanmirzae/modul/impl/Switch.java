@@ -1,6 +1,6 @@
 package com.github.hasanmirzae.modul.impl;
 
-import com.github.hasanmirzae.modul.AbstractModule;
+import com.github.hasanmirzae.module.AbstractModule;
 
 import java.util.Map;
 import java.util.concurrent.Callable;

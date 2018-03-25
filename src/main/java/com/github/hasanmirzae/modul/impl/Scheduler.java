@@ -1,69 +1,60 @@
 package com.github.hasanmirzae.modul.impl;
 
 
-import com.github.hasanmirzae.modul.AbstractModule;
+import com.github.hasanmirzae.module.AbstractModule;
 
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-public class Scheduler extends AbstractModule<SchedulerStatus,Void> {
-
-    private final SchedulerConfig config;
-    private final Runnable task;
-    private final Thread taskRunner;
+public class Scheduler extends AbstractModule<SchedulerStatus,ScheduledFuture<?>> {
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+    private Runnable task = null;
     private SchedulerStatus status = SchedulerStatus.INACTIVE;
+    private long initialDelay;
+    private long period;
+    private TimeUnit unit;
+    private ScheduledFuture<?> scheduledFuture;
 
-    public Scheduler(SchedulerConfig config, Runnable task){
-        this.config = config;
-        this.task = task;
-        this.taskRunner = createRunner();
+    private Scheduler(){}
+
+    public Scheduler(Runnable task, long initialDelay, long period, TimeUnit unit){
+        this.task = new Task(task);
+        this.period = period;
+        this.initialDelay = initialDelay;
+        this.unit = unit;
     }
 
-    private Thread createRunner() {
-        String error = validateRequirements();
-        if(error == null)
-        return createThread();
-        else
-        {
-            handleException(new IllegalArgumentException(error));
-            return null;
-        }
-    }
-
-    private Thread createThread() {
-        return new Thread(()->{
-                while (status == SchedulerStatus.ACTIVE){
-                    try {
-                        task.run();
-                    TimeUnit.SECONDS.sleep(config.getIntervalSeconds());
-                    } catch (Throwable e) {
-                        handleException(e);
-                    }
-                }
-        });
-    }
-
-    private String validateRequirements() {
-        if (this.config == null)
-            return "Configuration is null";
-        if (this.task == null)
-            return "Task is not defined";
-        return null;
-    }
-
-    @Override
-    public void invoke(SchedulerStatus input) {
-        process(input);
-    }
-
-    public Void process(SchedulerStatus status){
+    public ScheduledFuture<?> process(SchedulerStatus status){
         this.status = status;
-        if (this.taskRunner == null)
-            return null;
-        if(!taskRunner.isAlive() && this.status == SchedulerStatus.ACTIVE)
-            taskRunner.start();
-        else if(taskRunner.isAlive() && this.status == SchedulerStatus.INACTIVE)
-            taskRunner.interrupt();
-        return  null;
+
+        if(this.status == SchedulerStatus.ACTIVE){
+            if(this.scheduledFuture == null || this.scheduledFuture.isCancelled())
+                this.scheduledFuture = scheduler.scheduleAtFixedRate(this.task, initialDelay, period, unit);
+        }
+        else if(this.status == SchedulerStatus.INACTIVE){
+            if (this.scheduledFuture != null)
+                this.scheduledFuture.cancel(false);
+        }
+        return this.scheduledFuture;
+    }
+
+    class Task implements Runnable{
+
+        private final Runnable task;
+        Task(Runnable task){
+            this.task = task;
+        }
+
+        @Override
+        public void run() {
+            try{
+                this.task.run();
+            }catch (Throwable e){
+                handleException(e);
+            }
+        }
     }
 
 }
