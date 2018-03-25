@@ -1,6 +1,6 @@
 package com.github.hasanmirzae.modul.impl;
 
-public class SchedulerConfig{
+class SchedulerConfig{
 
     private int intervalSeconds;
 
