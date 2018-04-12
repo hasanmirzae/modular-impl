@@ -1,6 +1,7 @@
 package com.github.hasanmirzae.modul.impl;
 
 import com.github.hasanmirzae.module.AbstractModule;
+import com.github.hasanmirzae.module.Configuration;
 
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -9,6 +10,7 @@ import java.util.function.Function;
 public class Switch<I,O> extends AbstractModule<I,O> {
 
     private Map<I,Callable<O>> conditions;
+
 
     public Switch(Map<I,Callable<O>> conditions){
         this.conditions = conditions;

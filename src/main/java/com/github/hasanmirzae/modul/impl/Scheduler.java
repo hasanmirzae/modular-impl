@@ -1,15 +1,19 @@
 package com.github.hasanmirzae.modul.impl;
 
 
+import com.github.hasanmirzae.module.AbstractConfigurableModule;
 import com.github.hasanmirzae.module.AbstractModule;
+import com.github.hasanmirzae.module.Configuration;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
-public class Scheduler extends AbstractModule<SchedulerStatus,ScheduledFuture<?>> {
+public class Scheduler extends AbstractConfigurableModule<SchedulerStatus,ScheduledFuture<?>> {
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     private Runnable task = null;
     private SchedulerStatus status = SchedulerStatus.INACTIVE;
@@ -18,30 +22,52 @@ public class Scheduler extends AbstractModule<SchedulerStatus,ScheduledFuture<?>
     private TimeUnit unit;
     private ScheduledFuture<?> scheduledFuture;
 
-    private Scheduler(){}
+
+
 
     @Override
     protected Function<SchedulerStatus, ScheduledFuture<?>> getLogic() {
-        return status ->{
-            this.status = status;
-
-            if(this.status == SchedulerStatus.ACTIVE){
-                if(this.scheduledFuture == null || this.scheduledFuture.isCancelled())
-                    this.scheduledFuture = scheduler.scheduleAtFixedRate(this.task, initialDelay, period, unit);
+        return stat ->{
+            status = stat;
+            if(status == SchedulerStatus.ACTIVE){
+                if(scheduledFuture == null || scheduledFuture.isCancelled())
+                    scheduledFuture = scheduler.scheduleAtFixedRate(task, initialDelay, period, unit);
             }
-            else if(this.status == SchedulerStatus.INACTIVE){
-                if (this.scheduledFuture != null)
-                    this.scheduledFuture.cancel(false);
+            else if(status == SchedulerStatus.INACTIVE){
+                if (scheduledFuture != null)
+                    scheduledFuture.cancel(false);
             }
-            return this.scheduledFuture;
+            return scheduledFuture;
         };
     }
 
-    public Scheduler(Runnable task, long initialDelay, long period, TimeUnit unit){
-        this.task = new Task(task);
-        this.period = period;
-        this.initialDelay = initialDelay;
-        this.unit = unit;
+
+
+    public Scheduler(Configuration config){
+        super(config);
+        configure(config);
+    }
+
+    @Override
+    protected Collection<String> requiredConfigNames() {
+        return Arrays.asList("unit","taskName","period","initialDelay");
+    }
+
+
+    private void configure(Configuration configuration) {
+        try {
+            task = new Task(getTaskByName(configuration.get("taskName")));
+            period = Long.valueOf(configuration.get("period"));
+            initialDelay = Long.valueOf(configuration.get("initialDelay"));
+            unit = TimeUnit.valueOf(configuration.get("unit"));
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+    }
+
+    private Runnable getTaskByName(String name)
+            throws ClassNotFoundException, IllegalAccessException, InstantiationException {
+            return (Runnable) Class.forName(name).newInstance();
     }
 
 

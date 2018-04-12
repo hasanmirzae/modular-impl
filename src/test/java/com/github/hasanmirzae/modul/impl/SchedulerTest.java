@@ -1,5 +1,6 @@
-import com.github.hasanmirzae.modul.impl.Scheduler;
-import com.github.hasanmirzae.modul.impl.SchedulerStatus;
+package com.github.hasanmirzae.modul.impl;
+import com.github.hasanmirzae.module.Configuration;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.concurrent.TimeUnit;
@@ -9,34 +10,37 @@ import static org.junit.Assert.assertTrue;
 
 public class SchedulerTest {
 
-    private int count = 0;
+    public static int count = 0;
     private boolean exceptionHandled = false;
+    private Configuration config;
 
-    @Test
-    public void taskShouldBeCalledBySchedule(){
-        count = 0;
-        new Scheduler(this::sampleTask,0,100, TimeUnit.MILLISECONDS)
-                .invoke(SchedulerStatus.ACTIVE);
-        sleepSeconds(1);
-        assertTrue(count >= 10);
-    }
-    private void sampleTask(){
-        count++;
+    @Before
+    public void setup(){
+        config = new Configuration()
+                .add("period","100")
+                .add("unit","MILLISECONDS")
+                .add("initialDelay","0")
+                .add("taskName",SampleTask.class.getName());
+
     }
 
     @Test
     public void shouldNotRunIfInvokedWithInactiveStatus(){
         count = 0;
-        new Scheduler(this::sampleTask,0,100, TimeUnit.MILLISECONDS)
+        new Scheduler(config)
                 .invoke(SchedulerStatus.INACTIVE);
         sleepSeconds(1);
         assertEquals(0,count);
     }
 
+
+
+
     @Test
     public void testActivationDeActivationSchedule(){
         count = 0;
-        Scheduler scheduler =  new Scheduler(this::sampleTask,0,100, TimeUnit.MILLISECONDS);
+        Scheduler scheduler = new Scheduler(config);
+        scheduler.onException(System.out::println);
         // start schedule
         scheduler.invoke(SchedulerStatus.ACTIVE);
         sleepSeconds(1);
@@ -59,7 +63,12 @@ public class SchedulerTest {
     @Test
     public void exceptionHandlerShouldBeCalled(){
         exceptionHandled = false;
-        new Scheduler(()->{throw new RuntimeException();},0,100, TimeUnit.MILLISECONDS)
+        Configuration config = new Configuration()
+                .add("period","100")
+                .add("unit","MILLISECONDS")
+                .add("initialDelay","0")
+                .add("taskName",SampleTaskWithException.class.getName());
+        new Scheduler(config)
                 .onException(e-> exceptionHandled = true)
                 .invoke(SchedulerStatus.ACTIVE);
         sleepSeconds(1);
@@ -72,5 +81,4 @@ public class SchedulerTest {
         } catch (InterruptedException e) {
         }
     }
-
 }
